@@ -1,10 +1,23 @@
 import socket
+from http_utils.py import contains_special_characters,is_hex_char
 """HTTTP SERVER FOR JUST POST METHOD"""
 
-#INCOMPLETE
-def url_encodeed_parser_verifier(data):
-    splited_data = data.split("=")
-    print(f"splited_Data:{splited_data}")
+
+def url_encoded_parser_verifier(data):
+    if contains_special_characters(data):
+        return False
+    
+    for i,c in enumerate(data):
+        if c=='%':
+            if i+2<len(data):
+                if not is_hex_char(data[i+1]) and is_hex_char(data[i+2]):
+                    return False
+
+    return True
+
+                        
+
+    
         
 #INCOMPLETE
 def validate_http_request(request):
