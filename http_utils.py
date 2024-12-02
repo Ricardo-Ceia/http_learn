@@ -22,10 +22,23 @@ def url_encoded_parser_verifier(data):
 
     return True
 
-#TODO
 def validate_content_type_format(body,content_type):
-    pass
-#IMCOMPLETE    
+    #from one list object to string
+    body = body[0]
+    if len(body)==0:
+        return False
+    if content_type == 'application/x-www-form-urlencoded':
+        pairs = body.split('&')
+        for pair in pairs:
+            if not '=' in pair:
+                return False
+            key,value = pair.split('=')
+
+            if not key:
+                return False
+    return True
+              
+   
 def validate_http_request(request):
     lines = request.split('\r\n')
     method,uri,http_version = lines[0].split(' ')
@@ -35,29 +48,30 @@ def validate_http_request(request):
     headers = {}
     body_position = 0
     for i,line in enumerate(lines[1:]):
-        if not len(line)==0:#Remove empty line
-        body_position = i+1
+        if len(line)==0:  # Empty line indicates end of headers
+            body_position = i+2
             break
-            if len(line.split(":"))!=2:#Most have header_name header_value -> pair
-                return False
-            header_name,header_value = line.split(':')
-            for c in header_name:
-                if not c.isalphanum() or c=='-':
-                    return False 
-            headers[header_name] = header_value.strip()
-    
-    if headers['Content-Type'] and headers['Content-Length']:
-        body = lines[body_position:]
-        if not validate_content_type_format(lines[body_position:],headers['Content-Type']):
+        if len(line.split(":"))!=2:  # Must have header_name header_value -> pair
             return False
+        header_name,header_value = line.split(':')
+       
+        for c in header_name:
+            if not c.isalnum() and c!='-':
+                return False 
+        headers[header_name] = header_value.strip()
 
+     
+    if 'Content-Type' in headers and 'Content-Length' in headers:
+        body = lines[body_position:]
+        if not validate_content_type_format(body, headers['Content-Type']):
+            return False
         
-        if sys.getsizeof(body)!=headers['Content-Length']:
+        if len((body[0])) != int(headers['Content-Length']):
             return False
 
     return True
 
 
+valid_req = validate_http_request("POST /submit-form HTTP/1.1\nHost: www.example.com\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\nAccept: text/html,application/xhtml+xml\nAccept-Language: en-US,en;q=0.9\nAccept-Encoding: gzip, deflate\nConnection: keep-alive\nContent-Type: application/x-www-form-urlencoded\nContent-Length: 50\nusername=john&password=secret&invalid_field=test")
 
-
-validate_http_request("GET /index.html HTTP/1.1\r\nHost: www.example.com\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\nAccept: text/html,application/xhtml+xml\r\nAccept-Language: en-US,en;q=0.9\r\nAccept-Encoding: gzip, deflate\r\nConnection: keep-alive\r\n")
+print(f"THE REQ IS: {valid_req}")
